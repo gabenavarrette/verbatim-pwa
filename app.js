@@ -384,16 +384,27 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    document.getElementById("btn-commit").addEventListener("click", () => {
-        if (transientVersePayload) {
-            commitNewVerseToDatabase(transientVersePayload);
-            alert(`${transientVersePayload.reference} committed to Verbatim engine!`);
-            
-            document.getElementById("input-ref").value = "";
-            document.getElementById("scribe-preview").classList.add("hidden");
-            transientVersePayload = null;
+document.getElementById("btn-commit").addEventListener("click", () => {
+    if (transientVersePayload) {
+        
+        // Validation Check: Does this exact reference already exist in our local cache?
+        const alreadyExists = appState.allVerses.some(
+            verse => verse.reference.toLowerCase().replace(/\s+/g, '') === transientVersePayload.reference.toLowerCase().replace(/\s+/g, '')
+        );
+        
+        if (alreadyExists) {
+            alert(`⚠️ "${transientVersePayload.reference}" is already in your Verbatim archive!`);
+            return; // Stops the function execution completely
         }
-    });
+        
+        commitNewVerseToDatabase(transientVersePayload);
+        alert(`${transientVersePayload.reference} committed to Verbatim engine!`);
+        
+        document.getElementById("input-ref").value = "";
+        document.getElementById("scribe-preview").classList.add("hidden");
+        transientVersePayload = null;
+    }
+});
 
     loadDataFromSheets();
 });
