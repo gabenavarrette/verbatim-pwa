@@ -408,3 +408,42 @@ document.getElementById("btn-commit").addEventListener("click", () => {
 
     loadDataFromSheets();
 });
+
+// --- THEME MANAGEMENT ENGINE ---
+const themeToggleBtn = document.getElementById('theme-toggle');
+
+// Check local storage for persistent preference settings
+if (localStorage.getItem('theme') === 'dark') {
+    document.body.classList.add('dark-theme');
+}
+
+themeToggleBtn.addEventListener('click', () => {
+    document.body.classList.toggle('dark-theme');
+    if (document.body.classList.contains('dark-theme')) {
+        localStorage.setItem('theme', 'dark');
+    } else {
+        localStorage.setItem('theme', 'light');
+    }
+});
+
+// --- MINIMAL NAVIGATION SWITCHER ---
+function switchTab(targetTabId) {
+    // Hide all tab screens
+    document.getElementById('page-dashboard').classList.add('hidden');
+    document.getElementById('page-scribe').classList.add('hidden');
+    document.getElementById('page-archive').classList.add('hidden');
+    
+    // Unhide target screen
+    document.getElementById(`page-${targetTabId}`).classList.remove('hidden');
+    
+    // Manage navigation highlight states
+    const navButtons = document.querySelectorAll('.bottom-nav .nav-item');
+    navButtons.forEach(btn => btn.classList.remove('active'));
+    
+    // Match icon elements cleanly based on text values
+    navButtons.forEach(btn => {
+        if (btn.innerText.toLowerCase().trim() === targetTabId) {
+            btn.classList.add('active');
+        }
+    });
+}
