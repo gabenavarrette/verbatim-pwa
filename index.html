@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt — Scripture Memory</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body data-theme="dark"> <!-- Defaulting to dark mode for that sleek initial look -->
+
+    <!-- Global Header -->
+    <header class="app-header">
+        <h1>PROMPT</h1>
+        <button id="theme-toggle" aria-label="Toggle Theme">🌓</button>
+    </header>
+
+    <!-- Main Content Area (Views change via CSS/JS) -->
+    <main id="app-viewport">
+        
+        <!-- VIEW 1: DAILY QUEUE -->
+        <section id="view-queue" class="app-view active">
+            <div class="status-banner">
+                <p>Loading your daily pipeline...</p>
+            </div>
+            <div class="card-list" id="queue-container">
+                <!-- Due verse cards will be injected here by app.js -->
+            </div>
+        </section>
+
+        <!-- VIEW 2: STATS & ARCHIVE -->
+        <section id="view-stats" class="app-view">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-num" id="stat-monthly">0</span>
+                    <span class="stat-label">Monthly Vault</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-num" id="stat-active">0</span>
+                    <span class="stat-label">In Pipeline</span>
+                </div>
+            </div>
+            <div class="card-list" id="archive-container">
+                <!-- All verses for management will show here -->
+            </div>
+        </section>
+
+        <!-- VIEW 3: THE SCRIBE (ADD VERSE) -->
+        <section id="view-scribe" class="app-view">
+            <div class="scribe-form">
+                <h2>Add New Scripture</h2>
+                <div class="input-group">
+                    <input type="text" id="input-ref" placeholder="e.g., Romans 12:1-2">
+                    <button id="btn-fetch">Fetch Verse</button>
+                </div>
+                
+                <div id="scribe-preview" class="hidden">
+                    <div class="preview-box">
+                        <h3>Text Preview</h3>
+                        <p id="preview-text"></p>
+                    </div>
+                    <div class="preview-box milestone-monthly"> <!-- Visual wrapper for cipher -->
+                        <h3>Generated Cipher</h3>
+                        <p id="preview-cipher"></p>
+                    </div>
+                    <button id="btn-commit" class="btn-primary">Commit to System</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Navigation Bar -->
+    <nav class="bottom-nav">
+        <button class="nav-btn active" data-target="view-queue">
+            <span class="nav-icon">📅</span>
+            <span class="nav-label">Queue</span>
+        </button>
+        <button class="nav-btn" data-target="view-stats">
+            <span class="nav-icon">📊</span>
+            <span class="nav-label">Stats</span>
+        </button>
+        <button class="nav-btn" data-target="view-scribe">
+            <span class="nav-icon">✍️</span>
+            <span class="nav-label">Scribe</span>
+        </button>
+    </nav>
+
+    <!-- Modals or overlays (like the Practice Screen) will go down here later -->
+
+    <script src="app.js"></script>
+</body>
+</html>
