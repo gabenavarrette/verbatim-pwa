@@ -8,60 +8,76 @@
 </head>
 <body>
 
+    <!-- Top Action Bar -->
     <header>
-        <h1>Verbatim</h1>
-        <button class="theme-toggle-btn" id="theme-toggle" aria-label="Toggle Theme">🌓</button>
+        <div class="header-container">
+            <h1>Verbatim</h1>
+            <button id="theme-toggle" class="theme-toggle-btn" aria-label="Toggle theme">🌓</button>
+        </div>
     </header>
 
-    <!-- PAGE 1: DASHBOARD (QUEUE) -->
-    <main id="page-dashboard" class="page-container">
-        <div class="summary-card">
-            <h3>Active Queue</h3>
-            <p id="queue-count">0 Verses Due</p>
-        </div>
-        <div id="dashboard-queue-list">
-            <!-- Cards loop container dynamically handled via app.js -->
-        </div>
-    </main>
+    <!-- MAIN APP SCREEN CONTAINERS -->
+    <div class="app-body">
 
-    <!-- PAGE 2: SCRIBE (INTAKE ENGINE) -->
-    <main id="page-scribe" class="page-container hidden">
-        <div class="input-group">
-            <label class="input-label" for="input-ref">Scripture Reference</label>
-            <input type="text" id="input-ref" placeholder="e.g., Psalm 23:1">
-        </div>
-        <button id="btn-fetch" class="btn-primary" style="margin-bottom: 20px;">Fetch Passage</button>
+        <!-- PAGE 1: DASHBOARD (QUEUE) -->
+        <section id="page-dashboard" class="page-section">
+            <div class="queue-summary">
+                <span class="summary-label">Verses Due Today</span>
+                <div id="queue-count" class="summary-count">0</div>
+            </div>
+            
+            <!-- Core target for app.js rendering loop -->
+            <div id="dashboard-queue-list" class="cards-stack">
+                <!-- Spaced repetition queue injection point -->
+            </div>
+        </section>
 
-        <div id="scribe-preview" class="verse-card hidden">
-            <div class="verse-ref" id="preview-ref"></div>
-            <div class="verse-text" id="preview-text"></div>
-            <div class="verse-cipher" id="preview-cipher"></div>
-            <button id="btn-commit" class="btn-primary" style="margin-top: 15px;">Commit to Engine</button>
-        </div>
-    </main>
+        <!-- PAGE 2: SCRIBE (INTAKE ENGINE) -->
+        <section id="page-scribe" class="page-section hidden">
+            <div class="form-container">
+                <div class="input-group">
+                    <label for="input-ref">Scripture Reference</label>
+                    <input type="text" id="input-ref" placeholder="e.g., Psalm 23:1" autocomplete="off">
+                </div>
+                <button id="btn-fetch" class="btn-action">Fetch Passage</button>
+            </div>
 
-    <!-- PAGE 3: ARCHIVE (COMPREHENSIVE LIBRARY) -->
-    <main id="page-archive" class="page-container hidden">
-        <div style="margin-bottom: 16px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary);">
-            Entire Library
-        </div>
-        <div id="archive-all-list">
-            <!-- Master database archive list loop -->
-        </div>
-    </main>
+            <!-- Target for the preview generation engine -->
+            <div id="scribe-preview" class="preview-box hidden">
+                <div class="preview-card">
+                    <h2 id="preview-ref" class="verse-reference"></h2>
+                    <p id="preview-text" class="verse-body-text"></p>
+                    <div id="preview-cipher" class="verse-cipher-block"></div>
+                </div>
+                <button id="btn-commit" class="btn-action btn-commit">Commit to Engine</button>
+            </div>
+        </section>
 
-    <!-- NAVIGATION OVERLAY BAR -->
+        <!-- PAGE 3: ARCHIVE (COMPREHENSIVE LIBRARY) -->
+        <section id="page-archive" class="page-section hidden">
+            <div class="section-header">
+                <h2>Master Library</h2>
+            </div>
+            <!-- Core target for library rendering loop -->
+            <div id="archive-all-list" class="cards-stack">
+                <!-- Master archive collection injection point -->
+            </div>
+        </section>
+
+    </div>
+
+    <!-- STICKY BOTTOM NAVIGATION BAR -->
     <nav class="bottom-nav">
-        <button class="nav-item active" onclick="switchTab('dashboard')">
-            <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        <button class="nav-btn active" id="nav-dashboard">
+            <svg viewBox="0 0 24 24" width="24" height="24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
             <span>Dashboard</span>
         </button>
-        <button class="nav-item" onclick="switchTab('scribe')">
-            <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+        <button class="nav-btn" id="nav-scribe">
+            <svg viewBox="0 0 24 24" width="24" height="24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
             <span>Scribe</span>
         </button>
-        <button class="nav-item" onclick="switchTab('archive')">
-            <svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+        <button class="nav-btn" id="nav-archive">
+            <svg viewBox="0 0 24 24" width="24" height="24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
             <span>Archive</span>
         </button>
     </nav>
