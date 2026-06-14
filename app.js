@@ -1,16 +1,31 @@
 // ==========================================================================
-// 1. APP CONFIGURATION
+// 1. PUBLIC REPOSITORY SECURITY SHIELD (LOCAL STORAGE LOCKER)
 // ==========================================================================
-// Paste your EXACT Web App URL ending in /exec here
-const GOOGLE_API_URL = "YOUR_ACTUAL_EXEC_URL_HERE"; 
-const ESV_API_TOKEN  = "YOUR_ESV_API_BEARER_TOKEN_HERE";
+
+// Gracefully fetches keys from your browser's private local memory
+function getSecureKey(keyName, promptMessage) {
+    let key = localStorage.getItem(keyName);
+    
+    // If the key doesn't exist, ask for it nicely
+    if (!key || key.trim() === "" || key.includes("YOUR_")) {
+        key = prompt(promptMessage);
+        if (key) {
+            key = key.trim();
+            localStorage.setItem(keyName, key);
+        }
+    }
+    return key;
+}
+
+// These look for keys inside your physical device's browser, NOT on GitHub text!
+const GOOGLE_API_URL = getSecureKey("verbatim_google_url", "Verbatim Setup:\n\nPlease paste your Google Apps Script Web App URL (ends in /exec):");
+const ESV_API_TOKEN  = getSecureKey("verbatim_esv_token", "Verbatim Setup:\n\nPlease paste your secret ESV API Bearer Token:");
 
 // Global Local State Cache
 let appState = {
     allVerses: [],
     activeQueue: []
 };
-
 // ==========================================================================
 // 2. INTAKE ENGINE: ESV FETCH & CIPHER ALGORITHM
 // ==========================================================================
