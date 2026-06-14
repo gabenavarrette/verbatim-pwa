@@ -43,7 +43,8 @@ async function fetchEsvVerse(reference) {
         return null;
     }
     
-    const url = `https://api.esv.org/v3/passage/text/?q=${encodeURIComponent(reference)}&include-headings=false&include-footnotes=false&include-verse-numbers=false&include-short-copyright=false&include-passage-references=false`;
+    // Added include-headings=false and include-subheadings=false to strip headers like "A Psalm of David"
+    const url = `https://api.esv.org/v3/passage/text/?q=${encodeURIComponent(reference)}&include-headings=false&include-subheadings=false&include-footnotes=false&include-verse-numbers=false&include-short-copyright=false&include-passage-references=false`;
     
     try {
         const response = await fetch(url, {
