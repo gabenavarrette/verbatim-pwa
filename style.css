@@ -341,13 +341,22 @@ button {
     display: none !important;
 }
 
-/* Prevent cipher and text overflow on the Scribe preview block */
+/* Absolute containment hammer for the Scribe page preview elements */
 #scribe-preview, 
+#scribe-preview *, 
 #preview-text, 
 #preview-cipher {
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    word-break: break-word;
-    white-space: normal; /* Forces long unbroken text strings to wrap to the next line */
-    max-width: 100%;    /* Ensures it never pushes past its parent container boundaries */
+    display: block !important;       /* Overrides any rigid flexbox alignments pushing text outward */
+    max-width: 100% !important;      /* Forces strict containment inside the phone screen width */
+    width: 100% !important;
+    box-sizing: border-box !important;
+    
+    /* Strict word-breaking properties */
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    word-break: break-word !important;
+    
+    /* Prevent horizontal page scrolling entirely if it tries to leak */
+    overflow-x: hidden !important; 
 }
