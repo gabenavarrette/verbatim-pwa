@@ -1,0 +1,26 @@
+{
+  "short_name": "Prompt",
+  "name": "Prompt — Scripture Memory",
+  "icons": [
+    {
+      "src": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f4dd.png",
+      "type": "image/png",
+      "sizes": "72x72"
+    },
+    {
+      "src": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/192x192/1f4dd.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/512x512/1f4dd.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "index.html",
+  "background_color": "#090d16",
+  "theme_color": "#131b2e",
+  "display": "standalone",
+  "orientation": "portrait-primary"
+}
