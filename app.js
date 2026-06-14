@@ -43,8 +43,8 @@ async function fetchEsvVerse(reference) {
         return null;
     }
     
-    // Added include-headings=false and include-subheadings=false to strip headers like "A Psalm of David"
-    const url = `https://api.esv.org/v3/passage/text/?q=${encodeURIComponent(reference)}&include-headings=false&include-subheadings=false&include-footnotes=false&include-verse-numbers=false&include-short-copyright=false&include-passage-references=false`;
+    // Explicitly disabling all headings, subheadings (psalm descriptions), and automated title text
+    const url = `https://api.esv.org/v3/passage/text/?q=${encodeURIComponent(reference)}&include-headings=false&include-subheadings=false&include-autotitles=false&include-footnotes=false&include-verse-numbers=false&include-short-copyright=false&include-passage-references=false`;
     
     try {
         const response = await fetch(url, {
