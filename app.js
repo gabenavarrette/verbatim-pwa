@@ -1,8 +1,23 @@
 // ==========================================================================
-// 1. APP CONFIGURATION & STATE ENVIRONMENT
+// 1. PUBLIC REPOSITORY SECURITY SHIELD (LOCAL STORAGE LOCKER)
 // ==========================================================================
-const GOOGLE_API_URL = "https://script.google.com/macros/s/AKfycbylY8ApbAVncVeEMCfqhdGkO_ITipHDBTzBTfZpByjULeaJ_UOzp_SOEo5lkdV0w7oN/exec";
-const ESV_API_TOKEN  = "c12f4027a03ce24b10b8cecfc467bf053c2439bc";
+
+// This function checks if you've saved your keys on this device yet.
+// If not, it will securely prompt you for them once and save them locally.
+function getSecureKey(keyName, promptMessage) {
+    let key = localStorage.getItem(keyName);
+    if (!key || key.includes("YOUR_")) {
+        key = prompt(promptMessage);
+        if (key) {
+            localStorage.setItem(keyName, key.trim());
+        }
+    }
+    return key;
+}
+
+// Automatically pulls keys from your device's browser memory, NOT from GitHub text
+const GOOGLE_API_URL = getSecureKey("verbatim_google_url", "Verbatim Setup:\n\nPlease paste your Google Apps Script Web App URL (the one ending in /exec):");
+const ESV_API_TOKEN  = getSecureKey("verbatim_esv_token", "Verbatim Setup:\n\nPlease paste your secret ESV API Bearer Token:");
 
 // Global Local State Cache
 let appState = {
