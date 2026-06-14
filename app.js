@@ -129,8 +129,10 @@ function evaluateDailyPipeline(verses) {
 // ==========================================================================
 
 async function loadDataFromSheets() {
+    const bannerText = document.querySelector(".status-banner p");
+    
     if (!GOOGLE_API_URL || GOOGLE_API_URL.includes("YOUR_")) {
-        document.querySelector(".status-banner p").innerText = "⚠️ Please set your GOOGLE_API_URL in app.js";
+        if (bannerText) bannerText.innerText = "⚠️ Please set your GOOGLE_API_URL in app.js";
         return;
     }
     
@@ -138,12 +140,25 @@ async function loadDataFromSheets() {
         const response = await fetch(GOOGLE_API_URL);
         const textData = await response.text();
         
-        // Safety switch: Parse the text stream cleanly into arrays
+        // Safety check: Did Google send back an HTML error page instead of JSON?
+        if (textData.trim().startsWith("<!DOCTYPE") || textData.trim().startsWith("<html")) {
+            console.error("Google Sheets returned HTML instead of JSON database data. Text received:", textData);
+            if (bannerText) bannerText.innerHTML = "⚠️ Database Configuration Error.<br><small>Your Apps Script is returning an HTML login or error page. Check your deployment permissions!</small>";
+            
+            // Gracefully initialize an empty layout so the rest of the app doesn't lock up
+            appState.allVerses = [];
+            appState.activeQueue = [];
+            renderArchive();
+            return;
+        }
+
         let data = [];
         try {
             data = JSON.parse(textData);
-        } catch(e) {
-            console.error("JSON parsing failed, retrying format structural modification.");
+        } catch(parseError) {
+            console.error("Failed to parse response text as JSON:", parseError);
+            if (bannerText) bannerText.innerText = "⚠️ Received corrupted database data format.";
+            data = [];
         }
 
         appState.allVerses = Array.isArray(data) ? data : [];
@@ -151,11 +166,15 @@ async function loadDataFromSheets() {
         renderQueue();
         renderArchive();
     } catch (err) {
-        console.error("Database connection failed: ", err);
-        document.querySelector(".status-banner p").innerText = "⚠️ Connection to Google Sheets failed.";
+        console.error("Network connection to Google Sheets failed completely: ", err);
+        if (bannerText) bannerText.innerText = "⚠️ Connection to Google Sheets failed. Check internet or URL.";
+        
+        // Keep UI active even during a total network dropout
+        appState.allVerses = [];
+        appState.activeQueue = [];
+        renderArchive();
     }
 }
-
 async function commitNewVerseToDatabase(verseObj) {
     try {
         await fetch(GOOGLE_API_URL, {
