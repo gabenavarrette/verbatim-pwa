@@ -1,362 +1,244 @@
 /* ==========================================================================
-   1. DESIGN SYSTEM & VARIABLE TOKENS
+   VERBATIM DESIGN SYSTEM — Minimalist Editorial Style
    ========================================================================== */
+
 :root {
-    /* Global Core Layout Sizes */
-    --nav-height: 65px;
-    --header-height: 60px;
-    --radius-sm: 8px;
-    --radius-md: 16px;
-    --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-
-    /* Phase Colors (Shared across themes) */
-    --phase-countdown: #d97706; /* Energetic Amber */
-    --phase-daily: #059669;     /* Deep Slate/Forest Green */
-    --phase-weekly: #4f46e5;    /* Royal Indigo */
+    /* Light Mode Palette (Warm Linen & Earth Tones) */
+    --bg-app: #F4F3EF;
+    --bg-card: #FFFFFF;
+    --text-primary: #2B2B2B;
+    --text-secondary: #6E6A63;
+    --accent: #8C7A6B;
+    --border: #E6E4DD;
+    --shadow: rgba(43, 43, 43, 0.04);
+    --nav-bg: #FFFFFF;
 }
 
-/* Light Mode Variables */
-body[data-theme="light"] {
-    --bg-canvas: #f8fafc;
-    --bg-surface: #ffffff;
-    --text-primary: #0f172a;
-    --text-secondary: #475569;
-    --border-color: #e2e8f0;
-    --nav-bg: #ffffff;
-    
-    /* Monthly Phase "Celebration" Treatment - Light Mode (Pearl & Gold) */
-    --bg-monthly: #fcfbf7;
-    --text-monthly: #854d0e;
-    --border-monthly: #eab308;
-    --shadow-monthly: 0 4px 20px rgba(234, 179, 8, 0.15);
+body.dark-theme {
+    /* Dark Mode Palette (Deep Charcoal Slate) */
+    --bg-app: #1A1D20;
+    --bg-card: #24282C;
+    --text-primary: #E3E3E3;
+    --text-secondary: #9FA4A6;
+    --accent: #D1BFA7;
+    --border: #31373D;
+    --shadow: rgba(0, 0, 0, 0.2);
+    --nav-bg: #24282C;
 }
 
-/* Dark Mode Variables */
-body[data-theme="dark"] {
-    --bg-canvas: #090d16;
-    --bg-surface: #131b2e;
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
-    --border-color: #1e293b;
-    --nav-bg: #0d1527;
-    
-    /* Monthly Phase "Celebration" Treatment - Dark Mode (Jet Black & Metallic Gold) */
-    --bg-monthly: #0b0f19;
-    --text-monthly: #fbbf24;
-    --border-monthly: #f59e0b;
-    --shadow-monthly: 0 0 15px rgba(245, 158, 11, 0.25);
-}
-
-/* ==========================================================================
-   2. GLOBAL RESET & FOUNDATIONS
-   ========================================================================== */
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    -webkit-tap-highlight-color: transparent;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Georgia, Cambria, serif;
+    -webkit-font-smoothing: antialiased;
 }
 
 body {
-    font-family: var(--font-main);
-    background-color: var(--bg-canvas);
+    background-color: var(--bg-app);
     color: var(--text-primary);
-    line-height: 1.5;
-    overflow-x: hidden;
     transition: background-color 0.3s ease, color 0.3s ease;
+    padding-bottom: 75px; /* Space for sticky bottom navigation */
 }
 
-/* Desktop Containment: Locks app center screen on larger displays */
-@media (min-width: 600px) {
-    body {
-        max-width: 480px;
-        margin: 0 auto;
-        box-shadow: 0 0 40px rgba(0,0,0,0.5);
-        min-height: 100vh;
-        position: relative;
-    }
-}
-
-/* ==========================================================================
-   3. HEADER & BOTTOM NAVIGATION
-   ========================================================================== */
-.app-header {
-    height: var(--header-height);
-    background-color: var(--bg-surface);
-    border-bottom: 1px solid var(--border-color);
+/* --- HEADER --- */
+header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding: 24px 20px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+.theme-toggle-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: var(--text-primary);
+    padding: 4px;
+}
+
+/* --- CONTAINERS & SCROLL PANELS --- */
+.page-container {
+    max-width: 600px;
+    margin: 0 auto;
     padding: 0 20px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-}
-
-.app-header h1 {
-    font-size: 1.25rem;
-    font-weight: 800;
-    letter-spacing: 2px;
-}
-
-#theme-toggle {
-    background: none;
-    border: none;
-    font-size: 1.25rem;
-    cursor: pointer;
-}
-
-.bottom-nav {
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-    height: var(--nav-height);
-    background-color: var(--nav-bg);
-    border-top: 1px solid var(--border-color);
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    z-index: 100;
-}
-
-@media (min-width: 600px) {
-    .bottom-nav {
-        width: 480px;
-    }
-}
-
-.nav-btn {
-    background: none;
-    border: none;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    color: var(--text-secondary);
-    cursor: pointer;
-    flex: 1;
-    height: 100%;
-    justify-content: center;
-    gap: 4px;
-}
-
-.nav-btn.active {
-    color: var(--text-primary);
-    font-weight: 600;
-}
-
-.nav-icon {
-    font-size: 1.25rem;
-}
-
-.nav-label {
-    font-size: 0.75rem;
-}
-
-/* ==========================================================================
-   4. VIEW VIEWPORT MANAGEMENT
-   ========================================================================== */
-#app-viewport {
-    padding: 16px;
-    padding-bottom: calc(var(--nav-height) + 20px);
-    min-height: calc(100vh - var(--header-height));
-}
-
-.app-view {
-    display: none; /* Hides all screens by default */
-}
-
-.app-view.active {
-    display: block; /* Reveals active screen */
-}
-
-/* ==========================================================================
-   5. UTILITY UI COMPONENTS (CARDS, TAGS, FORMS)
-   ========================================================================== */
-.status-banner {
-    background-color: var(--bg-surface);
-    border: 1px solid var(--border-color);
-    padding: 12px 16px;
-    border-radius: var(--radius-sm);
-    margin-bottom: 16px;
-    font-weight: 500;
-}
-
-/* Standalone Flash/Progress Cards */
-.card-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.verse-card {
-    background-color: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 16px;
-    
-    /* ADD THESE THREE LINES TO PREVENT OVERFLOW CRASHES */
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    word-break: break-word;
-}
-
-/* Also add it to your specific cipher paragraph styling */
-.verse-card p {
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    white-space: normal;
-}
-
-.verse-card:active {
-    transform: scale(0.98);
-}
-
-.card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-}
-
-.verse-ref {
-    font-weight: 700;
-    font-size: 1.1rem;
-}
-
-/* Badge/Phase Pillar Styles */
-.phase-badge {
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    padding: 4px 8px;
-    border-radius: 20px;
-    color: #ffffff;
-}
-
-.phase-badge.countdown { background-color: var(--phase-countdown); }
-.phase-badge.daily { background-color: var(--phase-daily); }
-.phase-badge.weekly { background-color: var(--phase-weekly); }
-
-/* The Unlocked Milestone Phase: Monthly Badge and Card Special Treatment */
-.phase-badge.monthly { 
-    background: linear-gradient(135deg, var(--border-monthly), #b45309);
-}
-
-.verse-card.milestone-monthly {
-    background-color: var(--bg-monthly);
-    border: 2px solid var(--border-monthly);
-    box-shadow: var(--shadow-monthly);
-    color: var(--text-monthly);
-}
-
-/* Input Styles for View 3 (Scribe) */
-.scribe-form {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.input-group {
-    display: flex;
-    gap: 8px;
-}
-
-input[type="text"] {
-    flex: 1;
-    background-color: var(--bg-surface);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    padding: 12px;
-    border-radius: var(--radius-sm);
-    font-size: 1rem;
-    outline: none;
-}
-
-button {
-    font-family: var(--font-main);
-    font-weight: 600;
-    padding: 12px 20px;
-    border-radius: var(--radius-sm);
-    border: none;
-    cursor: pointer;
-    background-color: var(--text-primary);
-    color: var(--bg-canvas);
-}
-
-.btn-primary {
-    width: 100%;
-    background-color: #2563eb;
-    color: #ffffff;
-    font-size: 1rem;
-    margin-top: 12px;
-}
-
-.preview-box {
-    background-color: var(--bg-surface);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    padding: 16px;
-    margin-top: 12px;
-}
-
-.preview-box h3 {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 6px;
-}
-
-/* ==========================================================================
-   6. STATS DASHBOARD DISPLAY
-   ========================================================================== */
-.stats-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 20px;
-}
-
-.stat-card {
-    background-color: var(--bg-surface);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    padding: 16px;
-    text-align: center;
-}
-
-.stat-num {
-    display: block;
-    font-size: 2rem;
-    font-weight: 800;
-}
-
-.stat-label {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
 }
 
 .hidden {
     display: none !important;
 }
 
-/* Absolute containment hammer for the Scribe page preview elements */
+/* --- MINIMAL CARDS --- */
+.verse-card, .summary-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 12px var(--shadow);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+    
+    /* Strict containment guards */
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+.summary-card {
+    background-color: var(--bg-card);
+    border-left: 4px solid var(--accent);
+}
+
+.summary-card h3 {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+.summary-card p {
+    font-size: 28px;
+    font-weight: 700;
+}
+
+/* --- CARD TYPOGRAPHY & ELEMENTS --- */
+.verse-ref {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 10px;
+}
+
+.verse-text {
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--text-primary);
+    margin-bottom: 14px;
+}
+
+.verse-cipher {
+    font-family: monospace;
+    font-size: 15px;
+    letter-spacing: 2px;
+    font-weight: bold;
+    color: var(--text-secondary);
+    background-color: var(--bg-app);
+    padding: 10px;
+    border-radius: 6px;
+    margin-top: 10px;
+}
+
+/* --- FORM & INPUT FIELDS --- */
+.input-group {
+    margin-bottom: 20px;
+}
+
+.input-label {
+    display: block;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+input[type="text"], textarea {
+    width: 100%;
+    padding: 14px;
+    border: 1px solid var(--border);
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+    border-radius: 8px;
+    font-size: 16px;
+    transition: all 0.2s ease;
+}
+
+input[type="text"]:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+/* --- PRIMARY BUTTONS --- */
+.btn-primary {
+    width: 100%;
+    padding: 14px;
+    background-color: var(--text-primary);
+    color: var(--bg-app);
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.btn-primary:hover {
+    opacity: 0.9;
+}
+
+/* --- STRICT CONTAINMENT HAMMER FOR SCRIBE PREVIEW --- */
 #scribe-preview, 
 #scribe-preview *, 
 #preview-text, 
 #preview-cipher {
-    display: block !important;       /* Overrides any rigid flexbox alignments pushing text outward */
-    max-width: 100% !important;      /* Forces strict containment inside the phone screen width */
+    display: block !important;
+    max-width: 100% !important;
     width: 100% !important;
     box-sizing: border-box !important;
-    
-    /* Strict word-breaking properties */
     white-space: normal !important;
     word-wrap: break-word !important;
     overflow-wrap: break-word !important;
     word-break: break-word !important;
-    
-    /* Prevent horizontal page scrolling entirely if it tries to leak */
     overflow-x: hidden !important; 
+}
+
+/* --- MINIMAL BOTTOM NAVIGATION --- */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 65px;
+    background-color: var(--nav-bg);
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 1000;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.02);
+}
+
+.nav-item {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    gap: 4px;
+}
+
+.nav-item.active {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.nav-item svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
 }
