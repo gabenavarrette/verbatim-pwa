@@ -189,12 +189,23 @@ body {
 }
 
 .verse-card {
-    background-color: var(--bg-surface);
+    background-color: var(--card-bg);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
+    border-radius: 8px;
     padding: 16px;
-    cursor: pointer;
-    transition: transform 0.1s ease;
+    margin-bottom: 16px;
+    
+    /* ADD THESE THREE LINES TO PREVENT OVERFLOW CRASHES */
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+/* Also add it to your specific cipher paragraph styling */
+.verse-card p {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
 }
 
 .verse-card:active {
