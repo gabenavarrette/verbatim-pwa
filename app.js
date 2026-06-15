@@ -1,49 +1,153 @@
-// ==========================================================================
-// 1. PUBLIC REPOSITORY SECURITY SHIELD (LOCAL STORAGE LOCKER)
-// ==========================================================================
+/**
+ * ==========================================================================
+ * VERBATIM CORE ENGINE — Application Logic & State Controller
+ * ==========================================================================
+ */
 
-// Gracefully fetches keys from your browser's private local memory
-function getSecureKey(keyName, promptMessage) {
-    let key = localStorage.getItem(keyName);
-    
-    // If the key doesn't exist, ask for it nicely
-    if (!key || key.trim() === "" || key.includes("YOUR_")) {
-        key = prompt(promptMessage);
-        if (key) {
-            key = key.trim();
-            localStorage.setItem(keyName, key);
-        }
-    }
-    return key;
-}
-
-// These look for keys inside your physical device's browser, NOT on GitHub text!
-const GOOGLE_API_URL = getSecureKey("verbatim_google_url", "Verbatim Setup:\n\nPlease paste your Google Apps Script Web App URL (ends in /exec):");
-const ESV_API_TOKEN  = getSecureKey("verbatim_esv_token", "Verbatim Setup:\n\nPlease paste your secret ESV API Bearer Token:");
-
-// Global Local State Cache
-let appState = {
-    allVerses: [],
-    activeQueue: []
+// --- GLOBAL APPLICATION STATE CONFIGURATION ---
+const appState = {
+    allVerses: [],      // Complete master archive dataset
+    queueVerses: [],    // Filtered array of verses due for practice today
+    currentTab: 'dashboard'
 };
-// ==========================================================================
-// 2. INTAKE ENGINE: ESV FETCH & CIPHER ALGORITHM
-// ==========================================================================
 
-function generateCipher(text) {
-    return text
-        .match(/\b[a-zA-Z]|\p{Punctuation}/gu)
-        .join('')
-        .toUpperCase();
+// Placeholder configuration tokens — ensure these match your deployment setup
+const ESV_API_TOKEN = "YOUR_ESV_API_TOKEN"; 
+const GOOGLE_DEPLOY_URL = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL";
+
+// Data tracking payload used during the Scribe phase
+let transientVersePayload = null;
+
+document.addEventListener("DOMContentLoaded", () => {
+    initializeApplication();
+});
+
+/**
+ * Main application initialization pipeline
+ */
+function initializeApplication() {
+    setupThemeEngine();
+    setupNavigationListeners();
+    setupFormActionListeners();
+    
+    // Boot up the database stream from your Google Sheets deployment
+    fetchMasterDatabase();
 }
 
+/**
+ * 🌓 Theme Management — Controls look & persistent preference storage
+ */
+function setupThemeEngine() {
+    const themeToggleBtn = document.getElementById('theme-toggle');
+
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark-theme');
+    }
+
+    themeToggleBtn.addEventListener('click', () => {
+        document.body.classList.toggle('dark-theme');
+        if (document.body.classList.contains('dark-theme')) {
+            localStorage.setItem('theme', 'dark');
+        } else {
+            localStorage.setItem('theme', 'light');
+        }
+    });
+}
+
+/**
+ * 🗺️ Navigation Router — Switches panels via the sticky bottom action bar
+ */
+function setupNavigationListeners() {
+    const navButtons = {
+        dashboard: document.getElementById('nav-dashboard'),
+        scribe: document.getElementById('nav-scribe'),
+        archive: document.getElementById('nav-archive')
+    };
+
+    Object.keys(navButtons).forEach(tabKey => {
+        if (navButtons[tabKey]) {
+            navButtons[tabKey].addEventListener('click', () => switchTab(tabKey));
+        }
+    });
+}
+
+function switchTab(targetTabId) {
+    appState.currentTab = targetTabId;
+
+    // Toggle structural visibility across sections
+    document.getElementById('page-dashboard').classList.toggle('hidden', targetTabId !== 'dashboard');
+    document.getElementById('page-scribe').classList.toggle('hidden', targetTabId !== 'scribe');
+    document.getElementById('page-archive').classList.toggle('hidden', targetTabId !== 'archive');
+
+    // Update highlights across bottom navigation item array
+    document.querySelectorAll('.bottom-nav .nav-btn').forEach(btn => btn.classList.remove('active'));
+    
+    const activeNavButton = document.getElementById(`nav-${targetTabId}`);
+    if (activeNavButton) {
+        activeNavButton.classList.add('active');
+    }
+}
+
+/**
+ * 🛠️ Form Event Hooks — Hooks buttons to API extraction or commit functions
+ */
+function setupFormActionListeners() {
+    // Scribe Page Lookups
+    document.getElementById("btn-fetch").addEventListener("click", async () => {
+        const referenceInput = document.getElementById("input-ref").value.trim();
+        if (!referenceInput) {
+            alert("Please enter a valid scripture reference.");
+            return;
+        }
+
+        const rawVerseText = await fetchEsvVerse(referenceInput);
+        if (rawVerseText) {
+            const dynamicCipher = generateCipher(rawVerseText);
+            
+            // Build temporary payload state object
+            transientVersePayload = {
+                reference: referenceInput,
+                text: rawVerseText,
+                cipher: dynamicCipher
+            };
+
+            // Render text components down to layout blocks cleanly
+            document.getElementById("preview-ref").innerText = transientVersePayload.reference;
+            document.getElementById("preview-text").innerText = transientVersePayload.text;
+            document.getElementById("preview-cipher").innerText = transientVersePayload.cipher;
+
+            document.getElementById("scribe-preview").classList.remove("hidden");
+        }
+    });
+
+    // Commit Action — Enforces validation checks before running insertions
+    document.getElementById("btn-commit").addEventListener("click", () => {
+        if (transientVersePayload) {
+            
+            // Duplicate Protection Layer: Normalizes spacing to inspect matching strings
+            const alreadyExists = appState.allVerses.some(
+                verse => verse.reference.toLowerCase().replace(/\s+/g, '') === transientVersePayload.reference.toLowerCase().replace(/\s+/g, '')
+            );
+            
+            if (alreadyExists) {
+                alert(`⚠️ "${transientVersePayload.reference}" is already inside your master Verbatim records!`);
+                return;
+            }
+            
+            commitNewVerseToDatabase(transientVersePayload);
+        }
+    });
+}
+
+/**
+ * 🛰️ ESV Text Generation API Hook
+ */
 async function fetchEsvVerse(reference) {
     if (!ESV_API_TOKEN || ESV_API_TOKEN.includes("YOUR_")) {
-        alert("Please add your ESV API Token to app.js");
+        alert("Please assign a valid ESV API Token inside app.js");
         return null;
     }
     
-    // Explicitly disabling all headings, subheadings (psalm descriptions), and automated title text
     const url = `https://api.esv.org/v3/passage/text/?q=${encodeURIComponent(reference)}&include-headings=false&include-subheadings=false&include-autotitles=false&include-footnotes=false&include-verse-numbers=false&include-short-copyright=false&include-passage-references=false`;
     
     try {
@@ -55,395 +159,125 @@ async function fetchEsvVerse(reference) {
         if (data.passages && data.passages.length > 0) {
             return data.passages[0].trim().replace(/\s+/g, ' ');
         }
-        throw new Error("Verse not found via ESV API.");
+        throw new Error("Target reference location empty or invalid.");
     } catch (err) {
         console.error(err);
-        alert("Error fetching from ESV API: " + err.message);
+        alert("API Error: " + err.message);
         return null;
     }
 }
 
-// ==========================================================================
-// 3. CORE LOGIC ENGINE: LEITNER SYSTEM CALCULATIONS
-// ==========================================================================
-
-function getDaysDifference(dateString1, dateString2) {
-    if (!dateString1 || !dateString2) return 0;
-    const d1 = new Date(dateString1);
-    const d2 = new Date(dateString2);
-    const diffTime = Math.abs(d2 - d1);
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+/**
+ * 🔏 Memory Cipher Generator — Isolates the first letter of alphanumeric tokens
+ */
+function generateCipher(text) {
+    return text
+        .split(/\s+/)
+        .map(word => {
+            const standardToken = word.replace(/[^a-zA-Z0-9]/g, '');
+            return standardToken.length > 0 ? standardToken[0].toUpperCase() : '';
+        })
+        .filter(char => char !== '')
+        .join(' ');
 }
 
-function evaluateDailyPipeline(verses) {
-    const todayStr = new Date().toISOString().split('T')[0];
-    const dueQueue = [];
-    
-    let monthlyCount = 0;
-    let pipelineCount = 0;
+/**
+ * 📥 Data Synchronization Layer — Pulls array datasets from Google Sheets
+ */
+async function fetchMasterDatabase() {
+    if (!GOOGLE_DEPLOY_URL || GOOGLE_DEPLOY_URL.includes("YOUR_")) return;
 
-    if (!Array.isArray(verses)) return [];
-
-    verses.forEach(verse => {
-        let isDue = false;
-        let targetReps = 1;
-        
-        const totalDaysInSystem = getDaysDifference(verse.dateIntroduced, todayStr);
-        const practicedToday = (verse.lastPracticedDate === todayStr);
-
-        if (verse.currentPhase === "Monthly") monthlyCount++;
-        else pipelineCount++;
-
-        if (!practicedToday) {
-            switch (verse.currentPhase) {
-                case "Countdown":
-                    isDue = true;
-                    const dayNum = parseInt(verse.currentDayInPhase) + 1; 
-                    if (dayNum === 1) targetReps = 25;
-                    else if (dayNum === 2) targetReps = 20;
-                    else if (dayNum === 3) targetReps = 15;
-                    else if (dayNum === 4) targetReps = 10;
-                    else if (dayNum === 5) targetReps = 5;
-                    break;
-                    
-                case "Daily":
-                    isDue = true;
-                    targetReps = 1;
-                    break;
-                    
-                case "Weekly":
-                    const daysSincePractice = getDaysDifference(verse.lastPracticedDate, todayStr);
-                    if (daysSincePractice >= 7) {
-                        isDue = true;
-                        targetReps = 1;
-                    }
-                    break;
-                    
-                case "Monthly":
-                    const daysSinceLastMonthly = getDaysDifference(verse.lastPracticedDate, todayStr);
-                    if (daysSinceLastMonthly >= 30) {
-                        isDue = true;
-                        targetReps = 1;
-                    }
-                    break;
-            }
-        }
-
-        if (isDue) {
-            dueQueue.push({ ...verse, targetReps, currentReps: 0 });
-        }
-    });
-
-    document.getElementById("stat-monthly").innerText = monthlyCount;
-    document.getElementById("stat-active").innerText = pipelineCount;
-
-    return dueQueue;
-}
-
-// ==========================================================================
-// 4. DATABASE INTEGRATION LAYER (FETCH & SYNC)
-// ==========================================================================
-
-async function loadDataFromSheets() {
-    const bannerText = document.querySelector(".status-banner p");
-    
-    if (!GOOGLE_API_URL || GOOGLE_API_URL.includes("YOUR_")) {
-        if (bannerText) bannerText.innerText = "⚠️ Please set your GOOGLE_API_URL in app.js";
-        return;
-    }
-    
     try {
-        const response = await fetch(GOOGLE_API_URL);
-        const textData = await response.text();
+        const response = await fetch(`${GOOGLE_DEPLOY_URL}?action=getVerses`);
+        const result = await response.json();
         
-        // Safety check: Did Google send back an HTML error page instead of JSON?
-        if (textData.trim().startsWith("<!DOCTYPE") || textData.trim().startsWith("<html")) {
-            console.error("Google Sheets returned HTML instead of JSON database data. Text received:", textData);
-            if (bannerText) bannerText.innerHTML = "⚠️ Database Configuration Error.<br><small>Your Apps Script is returning an HTML login or error page. Check your deployment permissions!</small>";
+        if (result.status === "success") {
+            appState.allVerses = result.data.all || [];
+            appState.queueVerses = result.data.queue || [];
             
-            // Gracefully initialize an empty layout so the rest of the app doesn't lock up
-            appState.allVerses = [];
-            appState.activeQueue = [];
-            renderArchive();
-            return;
+            renderDashboardQueue();
+            renderMasterArchive();
         }
-
-        let data = [];
-        try {
-            data = JSON.parse(textData);
-        } catch(parseError) {
-            console.error("Failed to parse response text as JSON:", parseError);
-            if (bannerText) bannerText.innerText = "⚠️ Received corrupted database data format.";
-            data = [];
-        }
-
-        appState.allVerses = Array.isArray(data) ? data : [];
-        appState.activeQueue = evaluateDailyPipeline(appState.allVerses);
-        renderQueue();
-        renderArchive();
     } catch (err) {
-        console.error("Network connection to Google Sheets failed completely: ", err);
-        if (bannerText) bannerText.innerText = "⚠️ Connection to Google Sheets failed. Check internet or URL.";
-        
-        // Keep UI active even during a total network dropout
-        appState.allVerses = [];
-        appState.activeQueue = [];
-        renderArchive();
+        console.error("Database connection fault: ", err);
     }
 }
-async function commitNewVerseToDatabase(verseObj) {
+
+/**
+ * 📤 Data Persistence Layer — Commits payload data records up to the server
+ */
+async function commitNewVerseToDatabase(payload) {
+    if (!GOOGLE_DEPLOY_URL || GOOGLE_DEPLOY_URL.includes("YOUR_")) return;
+
     try {
-        await fetch(GOOGLE_API_URL, {
+        const response = await fetch(GOOGLE_DEPLOY_URL, {
             method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "text/plain" },
-            body: JSON.stringify({ action: "addVerse", ...verseObj })
+            mode: "no-cors", 
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "addVerse", ...payload })
         });
         
-        appState.allVerses.push(verseObj);
-        appState.activeQueue = evaluateDailyPipeline(appState.allVerses);
-        renderQueue();
-        renderArchive();
-    } catch (err) {
-        console.error(err);
-    }
-}
-
-async function syncProgressToDatabase(verseId, nextPhase, nextDayInPhase) {
-    const todayStr = new Date().toISOString().split('T')[0];
-    try {
-        await fetch(GOOGLE_API_URL, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "text/plain" },
-            body: JSON.stringify({
-                action: "updateProgress",
-                id: verseId,
-                currentPhase: nextPhase,
-                lastPracticedDate: todayStr,
-                currentDayInPhase: nextDayInPhase
-            })
-        });
-    } catch (err) {
-        console.error(err);
-    }
-}
-
-// ==========================================================================
-// 5. INTERFACE LAYERING & RENDER CONTROLLERS
-// ==========================================================================
-
-function renderQueue() {
-    const container = document.getElementById("queue-container");
-    const bannerText = document.querySelector(".status-banner p");
-    container.innerHTML = "";
-    
-    if (appState.activeQueue.length === 0) {
-        bannerText.innerText = "🎉 All caught up! Perfect recall achieved today.";
-        return;
-    }
-    
-    bannerText.innerText = `You have ${appState.activeQueue.length} verses remaining to practice today.`;
-    
-    appState.activeQueue.forEach((verse, index) => {
-        const card = document.createElement("div");
-        card.className = `verse-card ${verse.currentPhase === 'Monthly' ? 'milestone-monthly' : ''}`;
-        card.innerHTML = `
-            <div class="card-header">
-                <span class="verse-ref">${verse.reference}</span>
-                <span class="phase-badge ${verse.currentPhase.toLowerCase()}">${verse.currentPhase}</span>
-            </div>
-            <p style="font-size: 0.9rem; margin-bottom:10px; font-weight:700; letter-spacing:1px; display:none;" id="cipher-${index}">${verse.cipher}</p>
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <button onclick="toggleCipherHint(event, ${index})" style="background-color:var(--border-color); color:var(--text-primary); padding:6px 12px; font-size:0.8rem;">Hint</button>
-                <button onclick="logRepetition(${index})" id="btn-rep-${index}" class="btn-count">${verse.currentReps} / ${verse.targetReps} Reps</button>
-            </div>
-        `;
-        container.appendChild(card);
-    });
-}
-
-function renderArchive() {
-    const container = document.getElementById("archive-container");
-    container.innerHTML = "";
-    
-    if (appState.allVerses.length === 0) {
-        container.innerHTML = "<p style='text-align:center; color:var(--text-secondary); padding:20px;'>No verses in your archive yet.</p>";
-        return;
-    }
-    
-    appState.allVerses.forEach(verse => {
-        const card = document.createElement("div");
-        card.className = `verse-card ${verse.currentPhase === 'Monthly' ? 'milestone-monthly' : ''}`;
-        card.innerHTML = `
-            <div class="card-header">
-                <span class="verse-ref">${verse.reference}</span>
-                <span class="phase-badge ${verse.currentPhase.toLowerCase()}">${verse.currentPhase}</span>
-            </div>
-            <p style="font-size:0.9rem; opacity:0.85; margin-bottom:5px;">${verse.fullText}</p>
-            <small style="color:var(--text-secondary)">Introduced: ${verse.dateIntroduced} | Day count in Phase: ${verse.currentDayInPhase}</small>
-        `;
-        container.appendChild(card);
-    });
-}
-
-function toggleCipherHint(event, index) {
-    event.stopPropagation();
-    const cipherText = document.getElementById(`cipher-${index}`);
-    cipherText.style.display = cipherText.style.display === "none" ? "block" : "none";
-}
-
-function logRepetition(index) {
-    const item = appState.activeQueue[index];
-    item.currentReps++;
-    
-    const targetButton = document.getElementById(`btn-rep-${index}`);
-    targetButton.innerText = `${item.currentReps} / ${item.targetReps} Reps`;
-    
-    if (item.currentReps >= item.targetReps) {
-        let nextPhase = item.currentPhase;
-        let nextDayInPhase = parseInt(item.currentDayInPhase) + 1;
+        alert(`"${payload.reference}" successfully added to sheet database!`);
         
-        if (item.currentPhase === "Countdown" && nextDayInPhase >= 5) {
-            nextPhase = "Daily";
-            nextDayInPhase = 0;
-        } else if (item.currentPhase === "Daily" && nextDayInPhase >= 45) {
-            nextPhase = "Weekly";
-            nextDayInPhase = 0;
-        } else if (item.currentPhase === "Weekly" && nextDayInPhase >= 7) {
-            nextPhase = "Monthly";
-            nextDayInPhase = 0;
-        }
-
-        const masterIdx = appState.allVerses.findIndex(v => v.id === item.id);
-        if (masterIdx !== -1) {
-            appState.allVerses[masterIdx].currentPhase = nextPhase;
-            appState.allVerses[masterIdx].currentDayInPhase = nextDayInPhase;
-            appState.allVerses[masterIdx].lastPracticedDate = new Date().toISOString().split('T')[0];
-        }
-
-        syncProgressToDatabase(item.id, nextPhase, nextDayInPhase);
-
-        appState.activeQueue.splice(index, 1);
-        renderQueue();
-        renderArchive();
-    }
-}
-
-// ==========================================================================
-// 6. VIEW NAVIGATION & EVENT INITIALIZERS
-// ==========================================================================
-document.addEventListener("DOMContentLoaded", () => {
-    
-    document.querySelectorAll(".nav-btn").forEach(btn => {
-        btn.addEventListener("click", (e) => {
-            const currentBtn = e.currentTarget;
-            const targetViewId = currentBtn.getAttribute("data-target");
-            
-            document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
-            document.querySelectorAll(".app-view").forEach(v => v.classList.remove("active"));
-            
-            currentBtn.classList.add("active");
-            document.getElementById(targetViewId).classList.add("active");
-        });
-    });
-
-    document.getElementById("theme-toggle").addEventListener("click", () => {
-        const body = document.body;
-        const currentTheme = body.getAttribute("data-theme");
-        body.setAttribute("data-theme", currentTheme === "dark" ? "light" : "dark");
-    });
-
-    let transientVersePayload = null;
-
-    document.getElementById("btn-fetch").addEventListener("click", async () => {
-        const refInput = document.getElementById("input-ref").value.trim();
-        if (!refInput) return;
-        
-        document.getElementById("btn-fetch").innerText = "Searching...";
-        const text = await fetchEsvVerse(refInput);
-        document.getElementById("btn-fetch").innerText = "Fetch Verse";
-        
-        if (text) {
-            const cipher = generateCipher(text);
-            document.getElementById("preview-text").innerText = text;
-            document.getElementById("preview-cipher").innerText = cipher;
-            
-            transientVersePayload = {
-                id: Date.now().toString(),
-                dateIntroduced: new Date().toISOString().split('T')[0],
-                reference: refInput,
-                fullText: text,
-                cipher: cipher,
-                currentPhase: "Countdown",
-                lastPracticedDate: "",
-                currentDayInPhase: 0
-            };
-            
-            document.getElementById("scribe-preview").classList.remove("hidden");
-        }
-    });
-
-document.getElementById("btn-commit").addEventListener("click", () => {
-    if (transientVersePayload) {
-        
-        // Validation Check: Does this exact reference already exist in our local cache?
-        const alreadyExists = appState.allVerses.some(
-            verse => verse.reference.toLowerCase().replace(/\s+/g, '') === transientVersePayload.reference.toLowerCase().replace(/\s+/g, '')
-        );
-        
-        if (alreadyExists) {
-            alert(`⚠️ "${transientVersePayload.reference}" is already in your Verbatim archive!`);
-            return; // Stops the function execution completely
-        }
-        
-        commitNewVerseToDatabase(transientVersePayload);
-        alert(`${transientVersePayload.reference} committed to Verbatim engine!`);
-        
+        // Reset form inputs & previews cleanly
         document.getElementById("input-ref").value = "";
         document.getElementById("scribe-preview").classList.add("hidden");
         transientVersePayload = null;
+        
+        // Refresh views locally
+        fetchMasterDatabase();
+    } catch (err) {
+        console.error("Transmission error: ", err);
     }
-});
-
-    loadDataFromSheets();
-});
-
-// --- THEME MANAGEMENT ENGINE ---
-const themeToggleBtn = document.getElementById('theme-toggle');
-
-// Check local storage for persistent preference settings
-if (localStorage.getItem('theme') === 'dark') {
-    document.body.classList.add('dark-theme');
 }
 
-themeToggleBtn.addEventListener('click', () => {
-    document.body.classList.toggle('dark-theme');
-    if (document.body.classList.contains('dark-theme')) {
-        localStorage.setItem('theme', 'dark');
-    } else {
-        localStorage.setItem('theme', 'light');
-    }
-});
+/**
+ * 🖨️ View Renderer — Handles the Spaced Repetition Queue
+ */
+function renderDashboardQueue() {
+    const queueListElement = document.getElementById("dashboard-queue-list");
+    const countBadgeElement = document.getElementById("queue-count");
+    
+    queueListElement.innerHTML = "";
+    countBadgeElement.innerText = appState.queueVerses.length;
 
-// --- MINIMAL NAVIGATION SWITCHER ---
-function switchTab(targetTabId) {
-    // Hide all tab screens
-    document.getElementById('page-dashboard').classList.add('hidden');
-    document.getElementById('page-scribe').classList.add('hidden');
-    document.getElementById('page-archive').classList.add('hidden');
-    
-    // Unhide target screen
-    document.getElementById(`page-${targetTabId}`).classList.remove('hidden');
-    
-    // Manage navigation highlight states
-    const navButtons = document.querySelectorAll('.bottom-nav .nav-item');
-    navButtons.forEach(btn => btn.classList.remove('active'));
-    
-    // Match icon elements cleanly based on text values
-    navButtons.forEach(btn => {
-        if (btn.innerText.toLowerCase().trim() === targetTabId) {
-            btn.classList.add('active');
-        }
+    if (appState.queueVerses.length === 0) {
+        queueListElement.innerHTML = `<div class="verse-card" style="text-align: center; color: var(--text-secondary);">Your practice pipeline is clear for today! 🎉</div>`;
+        return;
+    }
+
+    appState.queueVerses.forEach(verse => {
+        const card = document.createElement("div");
+        card.className = "verse-card";
+        card.innerHTML = `
+            <h2 class="verse-reference">${verse.reference}</h2>
+            <p class="verse-body-text">${verse.text}</p>
+            <div class="verse-cipher-block">${verse.cipher}</div>
+        `;
+        queueListElement.appendChild(card);
+    });
+}
+
+/**
+ * 🖨️ View Renderer — Handles the Comprehensive Archive Library Display
+ */
+function renderMasterArchive() {
+    const archiveListElement = document.getElementById("archive-all-list");
+    archiveListElement.innerHTML = "";
+
+    if (appState.allVerses.length === 0) {
+        archiveListElement.innerHTML = `<div class="verse-card" style="text-align: center; color: var(--text-secondary);">No verses recorded in your archive yet.</div>`;
+        return;
+    }
+
+    appState.allVerses.forEach(verse => {
+        const card = document.createElement("div");
+        card.className = "verse-card";
+        card.innerHTML = `
+            <h2 class="verse-reference">${verse.reference}</h2>
+            <p class="verse-body-text">${verse.text}</p>
+            <div class="verse-cipher-block">${verse.cipher}</div>
+        `;
+        archiveListElement.appendChild(card);
     });
 }
